@@ -3,10 +3,12 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
+from schemas.responses.base import CreatedAtField, UpdatedAtField
+
 
 class UserListItemForResponse(BaseModel):
     """
-    Пользователь.
+    Элемент списка пользователей.
     """
     id: int = Field(
         default=...,
@@ -38,18 +40,54 @@ class UserListForResponse(BaseModel):
         default=...,
         title='Общее количество',
     )
-    items: List[UserListItemForResponse]
+    items: List[UserListItemForResponse] = Field(
+        default=...,
+        title='Пользователи',
+    )
 
 
-class UserRetrieveForResponse(BaseModel):
+class UserRetrieveForResponse(
+    UpdatedAtField,
+    CreatedAtField,
+    BaseModel,
+):
     """
     Пользователь.
     """
-    id: int
-    phone: str
-    first_name: str
-    last_name: str
-    middle_name: str
+    id: int = Field(
+        default=...,
+        title='ID',
+    )
+    phone: str = Field(
+        default=...,
+        title='Номер телефона',
+    )
+    first_name: str = Field(
+        default=...,
+        title='Имя',
+    )
+    last_name: str = Field(
+        default=...,
+        title='Фамилия',
+    )
+    middle_name: str = Field(
+        default=...,
+        title='Отчество',
+    )
     is_active: bool
-    updated_at: datetime.datetime
-    created_at: datetime.datetime
+
+
+class TokenUserData(UserRetrieveForResponse):
+    """Данные пользователя"""
+
+
+class Token(BaseModel):
+    exp: datetime.datetime
+    sub: str
+    token: str
+
+
+class AuthResponse(BaseModel):
+    access_token: Token
+    refresh_token: Token
+    user: TokenUserData

@@ -8,4 +8,4 @@ async def connect_to_db(app: FastAPI) -> None:
 
 
 async def close_db_connection(app: FastAPI) -> None:
-    await app.state.pool.close()
+    app.state.pool.close()

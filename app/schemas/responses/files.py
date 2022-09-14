@@ -1,10 +1,15 @@
-import datetime
 from typing import List
 
 from pydantic import BaseModel, Field
 
+from schemas.responses.base import CreatedAtField, UpdatedAtField
 
-class FileListItemForResponse(BaseModel):
+
+class FileListItemForResponse(
+    UpdatedAtField,
+    CreatedAtField,
+    BaseModel,
+):
     """
     Элемент списка файлов.
     """
@@ -20,8 +25,6 @@ class FileListItemForResponse(BaseModel):
         default=...,
         title='Название файла',
     )
-    updated_at: datetime.datetime
-    created_at: datetime.datetime
 
 
 class FileListForResponse(BaseModel):
@@ -32,4 +35,7 @@ class FileListForResponse(BaseModel):
         default=...,
         title='Общее количество',
     )
-    items: List[FileListItemForResponse]
+    items: List[FileListItemForResponse] = Field(
+        default=...,
+        title='Список',
+    )

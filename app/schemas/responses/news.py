@@ -1,7 +1,8 @@
-import datetime
 from typing import List
 
 from pydantic import BaseModel, Field
+
+from schemas.responses.base import CreatedAtField, UpdatedAtField
 
 
 class NewsListItemForResponse(BaseModel):
@@ -30,17 +31,37 @@ class NewsListForResponse(BaseModel):
         default=...,
         title='Общее количество новостей',
     )
-    items: List[NewsListItemForResponse]
+    items: List[NewsListItemForResponse] = Field(
+        default=...,
+        title='Новости',
+    )
 
 
-class NewsRetrieveForResponse(BaseModel):
+class NewsRetrieveForResponse(
+    UpdatedAtField,
+    CreatedAtField,
+    BaseModel,
+):
     """
     Новость.
     """
-    id: int
-    title: str
-    description: str
-    content: str
-    is_active: bool
-    updated_at: datetime.datetime
-    created_at: datetime.datetime
+    id: int = Field(
+        default=...,
+        title='ID',
+    )
+    title: str = Field(
+        default=...,
+        title='Заголовок',
+    )
+    description: str = Field(
+        default=...,
+        title='Краткое описание',
+    )
+    content: str = Field(
+        default=...,
+        title='Содержимое',
+    )
+    is_active: bool = Field(
+        default=...,
+        title='Активно',
+    )

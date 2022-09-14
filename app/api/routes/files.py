@@ -1,9 +1,10 @@
 import io
-from http import HTTPStatus
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
-from starlette.responses import StreamingResponse
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import status as http_status
+from fastapi import UploadFile
+from fastapi.responses import StreamingResponse
 
 from api.dependecies.authenticate import get_current_user
 from api.dependecies.database import get_repository
@@ -16,19 +17,22 @@ from utils.files import generate_file_path
 
 
 __all__ = [
-    'router',
     'prefix_router',
+    'router',
 ]
 
-
-router = APIRouter()
 prefix_router = 'files'
+router = APIRouter()
 
 
 @router.get(
     '/',
     name=f'{prefix_router}:list',
     response_model=FileListForResponse,
+    responses={
+        int(http_status.HTTP_200_OK): {'description': 'OK'},
+        int(http_status.HTTP_401_UNAUTHORIZED): {'description': strings.NOT_AUTH_ERROR},
+    },
 )
 async def get_list(
         limit: int = Query(
@@ -60,9 +64,14 @@ async def get_list(
 
 
 @router.post(
-    '/upload',
+    '/upload/',
     name=f'{prefix_router}:upload',
     response_model=FileListItemForResponse,
+    responses={
+        int(http_status.HTTP_200_OK): {'description': 'File uploaded'},
+        int(http_status.HTTP_400_BAD_REQUEST): {'description': strings.NON_UNIQUE_TITLE_ERROR},
+        int(http_status.HTTP_401_UNAUTHORIZED): {'description': strings.NOT_AUTH_ERROR},
+    },
 )
 async def upload_file(
         file: UploadFile,
@@ -87,8 +96,17 @@ async def upload_file(
 
 
 @router.get(
-    '/download',
+    '/download/',
     name=f'{prefix_router}:download',
+    responses={
+        int(http_status.HTTP_200_OK): {
+            'description': 'File download',
+            'content': {'application/octet-stream': {}},
+        },
+        int(http_status.HTTP_400_BAD_REQUEST): {'description': strings.NON_UNIQUE_TITLE_ERROR},
+        int(http_status.HTTP_401_UNAUTHORIZED): {'description': strings.NOT_AUTH_ERROR},
+        int(http_status.HTTP_404_NOT_FOUND): {'description': strings.FILE_DOES_NOT_EXISTS_ERROR},
+    },
 )
 async def download_file(
         file_id: int,
@@ -99,7 +117,7 @@ async def download_file(
         db_file = file_repo.get(file_id=file_id)
     except NotFoundDataException:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail=strings.FILE_DOES_NOT_EXISTS_ERROR,
         )
 

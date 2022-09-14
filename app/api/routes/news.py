@@ -1,7 +1,7 @@
-from http import HTTPStatus
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import status as http_status
 
 from api.dependecies.authenticate import get_current_user
 from api.dependecies.database import get_repository
@@ -18,12 +18,12 @@ from schemas.responses.news import (
 
 
 __all__ = [
-    'router',
     'prefix_router',
+    'router',
 ]
 
-router = APIRouter()
 prefix_router = 'news'
+router = APIRouter()
 
 
 @router.get(
@@ -60,7 +60,7 @@ async def get_list(
 
 
 @router.get(
-    '/{news_id}',
+    '/{news_id}/',
     name=f'{prefix_router}:get_retrieve',
     response_model=NewsRetrieveForResponse,
 )
@@ -72,7 +72,7 @@ async def get_retrieve(
         db_news = news_repo.get(news_id=news_id)
     except NotFoundDataException:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail=strings.NEWS_DOES_NOT_EXISTS_ERROR,
         )
 
@@ -83,6 +83,12 @@ async def get_retrieve(
     '/',
     name=f'{prefix_router}:create',
     response_model=NewsRetrieveForResponse,
+    responses={
+        int(http_status.HTTP_201_CREATED): {'description': 'News created'},
+        int(http_status.HTTP_400_BAD_REQUEST): {'description': strings.NON_UNIQUE_TITLE_ERROR},
+        int(http_status.HTTP_401_UNAUTHORIZED): {'description': strings.NOT_AUTH_ERROR},
+    },
+    status_code=http_status.HTTP_201_CREATED,
 )
 async def create(
         request_data: CreateNewsInRequest,
@@ -93,7 +99,7 @@ async def create(
         db_news = news_repo.create(**request_data.dict())
     except NonUniqueDataException:
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=strings.NON_UNIQUE_TITLE_ERROR,
         )
 
@@ -101,9 +107,15 @@ async def create(
 
 
 @router.patch(
-    '/{news_id}',
+    '/{news_id}/',
     name=f'{prefix_router}:partial_update',
     response_model=NewsRetrieveForResponse,
+    responses={
+        int(http_status.HTTP_200_OK): {'description': 'News updated'},
+        int(http_status.HTTP_400_BAD_REQUEST): {'description': strings.INVALID_DATA_ERROR},
+        int(http_status.HTTP_401_UNAUTHORIZED): {'description': strings.NOT_AUTH_ERROR},
+        int(http_status.HTTP_404_NOT_FOUND): {'description': strings.NEWS_DOES_NOT_EXISTS_ERROR},
+    },
 )
 async def partial_update(
         news_id: int,
@@ -115,7 +127,7 @@ async def partial_update(
         db_news = news_repo.get(news_id=news_id)
     except NotFoundDataException:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail=strings.NEWS_DOES_NOT_EXISTS_ERROR,
         )
 
@@ -126,7 +138,7 @@ async def partial_update(
         )
     except Exception:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=strings.INVALID_DATA_ERROR,
         )
 
@@ -135,9 +147,15 @@ async def partial_update(
 
 
 @router.put(
-    '/{news_id}',
+    '/{news_id}/',
     name=f'{prefix_router}:update',
     response_model=NewsRetrieveForResponse,
+    responses={
+        int(http_status.HTTP_200_OK): {'description': 'News updated'},
+        int(http_status.HTTP_400_BAD_REQUEST): {'description': strings.NON_UNIQUE_TITLE_ERROR},
+        int(http_status.HTTP_401_UNAUTHORIZED): {'description': strings.NOT_AUTH_ERROR},
+        int(http_status.HTTP_404_NOT_FOUND): {'description': strings.NEWS_DOES_NOT_EXISTS_ERROR},
+    },
 )
 async def update(
         news_id: int,
@@ -149,7 +167,7 @@ async def update(
         db_news = news_repo.get(news_id=news_id)
     except NotFoundDataException:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail=strings.NEWS_DOES_NOT_EXISTS_ERROR,
         )
 
@@ -160,12 +178,12 @@ async def update(
         )
     except NonUniqueDataException:
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=strings.NON_UNIQUE_TITLE_ERROR,
         )
     except Exception as e:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=strings.INVALID_DATA_ERROR,
         )
 
@@ -174,7 +192,7 @@ async def update(
 
 
 @router.delete(
-    '/{news_id}',
+    '/{news_id}/',
     name=f'{prefix_router}:delete',
     response_model=NewsRetrieveForResponse,
 )
@@ -187,7 +205,7 @@ async def delete(
         db_news = news_repo.get(news_id=news_id)
     except NotFoundDataException:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail=strings.NEWS_DOES_NOT_EXISTS_ERROR,
         )
 
@@ -195,7 +213,7 @@ async def delete(
         news_repo.delete(news_id=news_id)
     except Exception:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail=strings.INVALID_DATA_ERROR,
         )
 

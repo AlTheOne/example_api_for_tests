@@ -1,3 +1,5 @@
+NOT_AUTH_ERROR = 'Not auth'
+
 UNIQUE_VIOLATION_ERROR = 'Non unique data.'
 INVALID_DATA_ERROR = 'Invalid data.'
 OBJECT_NOT_FOUND_ERROR = 'Object not found.'

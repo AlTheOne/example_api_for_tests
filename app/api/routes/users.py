@@ -1,5 +1,3 @@
-from http import HTTPStatus
-
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi import status as http_status
 
@@ -14,33 +12,40 @@ from schemas.requests.users import (
     CreateUserInRequest,
     PartialUpdateUserInRequest,
 )
-from schemas.responses.users import UserRetrieveForResponse
+from schemas.responses.users import AuthResponse, UserRetrieveForResponse
 from utils.jwt import create_tokens
 from utils.pswd import authentication
 
 
 __all__ = [
-    'router',
     'prefix_router',
+    'router',
 ]
 
-router = APIRouter()
 prefix_router = 'users'
+router = APIRouter()
 
 
 @router.post(
-    '/auth',
+    '/auth/',
     name=f'{prefix_router}:auth',
+    response_model=AuthResponse,
+    responses={
+        int(http_status.HTTP_200_OK): {'description': 'User updated'},
+        int(http_status.HTTP_400_BAD_REQUEST): {
+            'description': strings.INVALID_PHONE_OR_PASSWORD_ERROR,
+        },
+    },
 )
 async def auth(
         request_data: AuthUserInRequest,
         users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-):
+) -> AuthResponse:
     try:
         db_user = users_repo.get(phone=request_data.phone)
     except NotFoundDataException:
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=strings.INVALID_PHONE_OR_PASSWORD_ERROR,
         )
 
@@ -50,7 +55,7 @@ async def auth(
             hashed_password=db_user.hashed_password,
     ):
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=strings.INVALID_PHONE_OR_PASSWORD_ERROR,
         )
 
@@ -61,12 +66,21 @@ async def auth(
         },
     )
 
-    return tokens
+    return AuthResponse(
+        access_token=tokens[0],
+        refresh_token=tokens[1],
+        user=db_user,
+    )
 
 
 @router.post(
     '/',
     name=f'{prefix_router}:create',
+    responses={
+        int(http_status.HTTP_201_CREATED): {'description': 'User created'},
+        int(http_status.HTTP_400_BAD_REQUEST): {'description': strings.NON_UNIQUE_PHONE_ERROR},
+    },
+    status_code=http_status.HTTP_201_CREATED,
 )
 async def create(
         request_data: CreateUserInRequest,
@@ -76,17 +90,23 @@ async def create(
         users_repo.create(**request_data.get_data_for_create())
     except NonUniqueDataException:
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=strings.NON_UNIQUE_PHONE_ERROR,
         )
 
-    return Response(status_code=HTTPStatus.NO_CONTENT)
+    return Response(status_code=http_status.HTTP_201_CREATED)
 
 
 @router.patch(
     '/',
     name=f'{prefix_router}:partial_update',
     response_model=UserRetrieveForResponse,
+    responses={
+        int(http_status.HTTP_200_OK): {'description': 'User updated'},
+        int(http_status.HTTP_400_BAD_REQUEST): {'description': strings.INVALID_DATA_ERROR},
+        int(http_status.HTTP_401_UNAUTHORIZED): {'description': strings.NOT_AUTH_ERROR},
+        int(http_status.HTTP_404_NOT_FOUND): {'description': strings.USER_DOES_NOT_EXISTS_ERROR},
+    },
 )
 async def partial_update(
         request_data: PartialUpdateUserInRequest,
@@ -108,7 +128,7 @@ async def partial_update(
         )
     except Exception:
         raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=strings.INVALID_DATA_ERROR,
         )
 

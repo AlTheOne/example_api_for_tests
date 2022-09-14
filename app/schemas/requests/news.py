@@ -23,7 +23,6 @@ class CreateNewsInRequest(BaseModel):
         default=...,
         title='Содержимое',
     )
-
     is_active: Optional[bool] = Field(
         default=None,
         title='Новость доступна для просмотра',
@@ -46,7 +45,6 @@ class PartialUpdateNewsInRequest(BaseModel):
         default=None,
         title='Содержимое',
     )
-
     is_active: Optional[bool] = Field(
         default=None,
         title='Новость доступна для просмотра',

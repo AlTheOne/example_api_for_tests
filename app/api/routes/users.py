@@ -69,7 +69,7 @@ async def auth(
     return AuthResponse(
         access_token=tokens[0],
         refresh_token=tokens[1],
-        user=db_user,
+        user=db_user.__dict__,
     )
 
 
